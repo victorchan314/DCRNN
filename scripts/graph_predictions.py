@@ -9,17 +9,17 @@ import numpy as np
 import datetime as dt
 import matplotlib.pyplot as plt
 
-from lib import utils
+from lib import data_utils
 
 DETECTOR_DATA_FREQUENCY = dt.timedelta(minutes=5)
 
 
 
 def extract_flat_data(timestamps_array, groundtruth_array):
-    stretches = utils.get_stretches(timestamps_array[:, 0], DETECTOR_DATA_FREQUENCY)
-    timestamps = utils.flatten_circulant_like_matrix_by_stretches(timestamps_array, stretches)
+    stretches = data_utils.get_stretches(timestamps_array[:, 0], DETECTOR_DATA_FREQUENCY)
+    timestamps = data_utils.flatten_circulant_like_matrix_by_stretches(timestamps_array, stretches)
     groundtruth_array_transposed = np.swapaxes(groundtruth_array, 0, 1)
-    groundtruth = utils.flatten_circulant_like_matrix_by_stretches(groundtruth_array_transposed, stretches)
+    groundtruth = data_utils.flatten_circulant_like_matrix_by_stretches(groundtruth_array_transposed, stretches)
 
     return timestamps, groundtruth
 
@@ -50,7 +50,7 @@ def plot_predictions(y, y_hat, x, timestamps_array, horizon, sensors, horizons=N
         horizons = horizons or range(horizon)
         
         for i, h in enumerate(horizons):
-            stretches = utils.get_stretches(timestamps_array[:, h], DETECTOR_DATA_FREQUENCY)
+            stretches = data_utils.get_stretches(timestamps_array[:, h], DETECTOR_DATA_FREQUENCY)
             color = cmap(i / len(horizons))
 
             for start, end in stretches:
