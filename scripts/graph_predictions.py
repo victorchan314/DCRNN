@@ -6,13 +6,10 @@ parent_dir = os.path.abspath("/Users/victorchan/Desktop/UC Berkeley/Research/Cod
 sys.path.append(parent_dir)
 
 import numpy as np
-import pandas as pd
 import datetime as dt
 import matplotlib.pyplot as plt
 
-import utils
-
-
+from lib import utils
 
 DETECTOR_DATA_FREQUENCY = dt.timedelta(minutes=5)
 
@@ -41,9 +38,9 @@ def plot_predictions(y, y_hat, x, timestamps_array, horizon, sensors, horizons=N
         plt.ylabel(ylabel)
 
         xticks = np.arange(x.shape[0])
-        xticks_locs = [xticks[x.shape[0] // num_xticks * i] for i in range(num_xticks + 1)]
         xticks_labels = np.datetime_as_string(x, unit=xticks_datetime_precision)
-        xticks_spaced_labels = [xticks_labels[x.shape[0] // num_xticks * i] for i in range(num_xticks + 1)]
+        xticks_locs = [xticks[x.shape[0] // num_xticks * i] for i in range(num_xticks)] + [xticks[-1]]
+        xticks_spaced_labels = [xticks_labels[x.shape[0] // num_xticks * i] for i in range(num_xticks)] + [xticks_labels[-1]]
 
         plt.plot(xticks, y[:, sensor], label="Ground Truth")
         plt.xticks(xticks_locs, xticks_spaced_labels)
