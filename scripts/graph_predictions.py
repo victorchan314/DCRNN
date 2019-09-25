@@ -26,7 +26,8 @@ def extract_flat_data(timestamps_array, groundtruth_array):
 def fit_dates_to_timestamps(full_x, original_x, new_x):
     return new_x[np.isin(full_x, original_x)]
 
-def plot_predictions(y, y_hat, x, timestamps_array, horizon, sensors, horizons=None, save_dir=None, title=None, figsize=None, xlabel="", ylabel="", num_xticks=12, xticks_datetime_precision="D", verbose=0):
+def plot_predictions(y, y_hat, x, timestamps_array, horizon, sensors, horizons=None, by_horizon=True, save_dir=None,
+                     title=None, figsize=None, xlabel="", ylabel="", num_xticks=12, xticks_datetime_precision="D", verbose=0):
     if not isinstance(sensors, list):
         sensors = [sensors]
 
@@ -48,25 +49,44 @@ def plot_predictions(y, y_hat, x, timestamps_array, horizon, sensors, horizons=N
         cmap = plt.get_cmap('jet')
 
         horizons = horizons or range(horizon)
-        
-        for i, h in enumerate(horizons):
-            stretches = data_utils.get_stretches(timestamps_array[:, h], DETECTOR_DATA_FREQUENCY)
-            color = cmap(i / len(horizons))
 
-            for start, end in stretches:
-                x_stretch = timestamps_array[start:end, h]
-                y_hat_stretch = y_hat[h, start:end, sensor]
-                x_stretch_range = fit_dates_to_timestamps(x, x_stretch, xticks)
+        if by_horizon:
+            for i, h in enumerate(horizons):
+                stretches = data_utils.get_stretches(timestamps_array[:, h], DETECTOR_DATA_FREQUENCY)
+                color = cmap(i / len(horizons))
 
-                if start == 0:
-                    label = "Horizon {} predictions".format(h)
-                else:
-                    label = None
+                for start, end in stretches:
+                    x_stretch = timestamps_array[start:end, h]
+                    y_hat_stretch = y_hat[h, start:end, sensor]
+                    x_stretch_range = fit_dates_to_timestamps(x, x_stretch, xticks)
 
-                plt.plot(x_stretch_range, y_hat_stretch, label=label, c=color)
+                    if start == 0:
+                        label = "Horizon {} predictions".format(h)
+                    else:
+                        label = None
 
-        plt.legend(loc="upper left", bbox_to_anchor=(1, 1), borderaxespad=0.)
-        plt.show()
+                    plt.plot(x_stretch_range, y_hat_stretch, label=label, c=color)
+
+            plt.legend(loc="upper left", bbox_to_anchor=(1, 1), borderaxespad=0.)
+            plt.show()
+        else:
+            stretches = data_utils.get_stretches(timestamps_array[:, 0], DETECTOR_DATA_FREQUENCY)
+            for i, (start, end) in enumerate(stretches):
+                for t in range(start, end):
+                    color = cmap((t - start) / (end - start - 1))
+                    x_stretch = timestamps_array[t, :]
+                    y_hat_stretch = y_hat[:, t, sensor]
+                    x_stretch_range = fit_dates_to_timestamps(x, x_stretch, xticks)
+
+                    if start == 0:
+                        label = "Time {} predictions".format(t)
+                    else:
+                        label = None
+
+                    plt.plot(x_stretch_range, y_hat_stretch, label=label, c=color)
+
+            plt.legend(loc="upper left", bbox_to_anchor=(1, 1), borderaxespad=0.)
+            plt.show()
 
 def plot_predictions_all_sensors(y, y_hat, horizon, timestamps=None, horizons=None, save_dir=None, title=None, figsize=None, verbose=0):
     nrows = int(np.floor(np.sqrt(y.shape[2])))
@@ -115,7 +135,10 @@ def main(args):
     timestamps, groundtruth = extract_flat_data(timestamps_array, groundtruth_array)
 
     #plot_predictions(groundtruth, predictions, horizon, sensors=[0, 4, 8, 12], timestamps=timestamps, horizons=[0, 4, 8, 11], save_dir=args.graph_save_dir, title="DCRNN Predictions", figsize=(20, 8), xlabel="Time", ylabel="Flow", verbose=verbose)
-    plot_predictions(groundtruth, predictions_array, timestamps, timestamps_array, horizon, sensors=[0], horizons=[0, 2, 4, 6, 8, 10], save_dir=args.graph_save_dir, title="DCRNN Predictions", figsize=(20, 8), xlabel="Time", ylabel="Flow", verbose=verbose)
+    #plot_predictions(groundtruth, predictions_array, timestamps, timestamps_array, horizon, sensors=[1], horizons=[0, 2, 4, 6, 8, 10], save_dir=args.graph_save_dir,
+    #                 title="DCRNN Predictions", figsize=(20, 8), xlabel="Time", ylabel="Flow", verbose=verbose)
+    plot_predictions(groundtruth, predictions_array, timestamps, timestamps_array, horizon, sensors=[1], horizons=[0, 2, 4, 6, 8, 10], by_horizon=False, save_dir=args.graph_save_dir,
+                     title="DCRNN Predictions", figsize=(20, 8), xlabel="Time", ylabel="Flow", verbose=verbose)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
