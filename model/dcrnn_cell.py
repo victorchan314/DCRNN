@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from tensorflow.contrib.rnn import RNNCell
 
-from lib import utils
+from DCRNN.lib import utils
 
 
 class DCGRUCell(RNNCell):

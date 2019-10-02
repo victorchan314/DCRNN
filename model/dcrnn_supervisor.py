@@ -9,11 +9,11 @@ import tensorflow as tf
 import time
 import yaml
 
-from lib import utils, metrics
-from lib.AMSGrad import AMSGrad
-from lib.metrics import masked_mae_loss
+from DCRNN.lib import utils, metrics
+from DCRNN.lib.AMSGrad import AMSGrad
+from DCRNN.lib.metrics import masked_mae_loss
 
-from model.dcrnn_model import DCRNNModel
+from DCRNN.model.dcrnn_model import DCRNNModel
 
 
 class DCRNNSupervisor(object):
@@ -73,7 +73,7 @@ class DCRNNSupervisor(object):
         # Calculate loss
         output_dim = self._model_kwargs.get('output_dim')
         preds = self._train_model.outputs
-        labels = self._train_model.labels[..., :output_dim]
+        labels = self._train_model.labels[..., -output_dim:]
 
         null_val = 0.
         self._loss_fn = masked_mae_loss(scaler, null_val)
@@ -130,7 +130,7 @@ class DCRNNSupervisor(object):
         outputs = []
         output_dim = self._model_kwargs.get('output_dim')
         preds = model.outputs
-        labels = model.labels[..., :output_dim]
+        labels = model.labels[..., -output_dim:]
         loss = self._loss_fn(preds=preds, labels=labels)
         fetches = {
             'loss': loss,
@@ -269,10 +269,10 @@ class DCRNNSupervisor(object):
         predictions = []
         y_truths = []
         for horizon_i in range(self._data['y_test'].shape[1]):
-            y_truth = scaler.inverse_transform(self._data['y_test'][:, horizon_i, :, 0])
+            y_truth = scaler.inverse_transform(self._data['y_test'][:, horizon_i, :, 1])
             y_truths.append(y_truth)
 
-            y_pred = scaler.inverse_transform(y_preds[:y_truth.shape[0], horizon_i, :, 0])
+            y_pred = scaler.inverse_transform(y_preds[:y_truth.shape[0], horizon_i, :, 1])
             predictions.append(y_pred)
 
             mae = metrics.masked_mae_np(y_pred, y_truth, null_val=0)
