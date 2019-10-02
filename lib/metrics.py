@@ -85,8 +85,9 @@ def masked_mae_np(preds, labels, null_val=np.nan):
         return np.mean(mae)
 
 
-def masked_mape_np(preds, labels, null_val=np.nan):
+def masked_mape_np(preds, labels, null_val=np.nan, epsilon=1e-8):
     with np.errstate(divide='ignore', invalid='ignore'):
+        labels[np.abs(labels) < epsilon] = 0
         if np.isnan(null_val):
             mask = ~np.isnan(labels)
         else:
