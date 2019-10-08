@@ -100,7 +100,7 @@ class DCGRUCell(RNNCell):
                 c = self._gconv(inputs, r * state, self._num_units)
                 if self._activation is not None:
                     c = self._activation(c)
-            output = new_state = u * state + (1 - u) * c
+            output = new_state = (1 - u) * state + u * c
             if self._num_proj is not None:
                 with tf.variable_scope("projection"):
                     w = tf.get_variable('w', shape=(self._num_units, self._num_proj))
