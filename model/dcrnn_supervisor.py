@@ -150,7 +150,7 @@ class DCRNNSupervisor(object):
                 'outputs': model.outputs
             })
 
-        for _, (x, y) in enumerate(data_generator):
+        for x, y in data_generator:
             feed_dict = {
                 model.inputs: x,
                 model.labels: y,

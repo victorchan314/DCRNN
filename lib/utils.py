@@ -20,7 +20,7 @@ class DataLoader(object):
         """
         self.batch_size = batch_size
         self.current_ind = 0
-        if pad_with_last_sample:
+        if pad_with_last_sample and not shuffle:
             num_padding = (batch_size - (len(xs) % batch_size)) % batch_size
             x_padding = np.repeat(xs[-1:], num_padding, axis=0)
             y_padding = np.repeat(ys[-1:], num_padding, axis=0)
@@ -28,6 +28,7 @@ class DataLoader(object):
             ys = np.concatenate([ys, y_padding], axis=0)
         self.size = len(xs)
         self.num_batch = int(self.size // self.batch_size)
+        self.shuffle = shuffle
         if shuffle:
             permutation = np.random.permutation(self.size)
             xs, ys = xs[permutation], ys[permutation]
@@ -35,18 +36,28 @@ class DataLoader(object):
         self.ys = ys
 
     def get_iterator(self):
-        self.current_ind = 0
+        if self.shuffle:
+            def _wrapper():
+                for _ in range(self.num_batch):
+                    random_indices = np.random.randint(0, self.size, self.batch_size)
+                    x_i = self.xs[random_indices, :]
+                    y_i = self.ys[random_indices, :]
+                    yield x_i, y_i
 
-        def _wrapper():
-            while self.current_ind < self.num_batch:
-                start_ind = self.batch_size * self.current_ind
-                end_ind = min(self.size, self.batch_size * (self.current_ind + 1))
-                x_i = self.xs[start_ind: end_ind, ...]
-                y_i = self.ys[start_ind: end_ind, ...]
-                yield (x_i, y_i)
-                self.current_ind += 1
+            return _wrapper()
+        else:
+            self.current_ind = 0
 
-        return _wrapper()
+            def _wrapper():
+                while self.current_ind < self.num_batch:
+                    start_ind = self.batch_size * self.current_ind
+                    end_ind = min(self.size, self.batch_size * (self.current_ind + 1))
+                    x_i = self.xs[start_ind: end_ind, ...]
+                    y_i = self.ys[start_ind: end_ind, ...]
+                    yield (x_i, y_i)
+                    self.current_ind += 1
+
+            return _wrapper()
 
 
 class StandardScaler:
