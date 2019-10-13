@@ -117,7 +117,7 @@ class DCRNNSupervisor(object):
             run_id = 'dcrnn_%s_%d_h_%d_%s_lr_%g_bs_%d_%s/' % (
                 filter_type_abbr, max_diffusion_step, horizon,
                 structure, learning_rate, batch_size,
-                time.strftime('%m%d%H%M%S'))
+                time.strftime('%Y%m%d%H%M%S'))
             base_dir = kwargs.get('base_dir')
             log_dir = os.path.join(base_dir, run_id)
         if not os.path.exists(log_dir):

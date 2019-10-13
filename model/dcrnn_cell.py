@@ -155,11 +155,17 @@ class DCGRUCell(RNNCell):
 
         scope = tf.get_variable_scope()
         with tf.variable_scope(scope):
-            for support in self._supports:
-                x1 = x0
-                for k in range(self._max_diffusion_step):
-                    x1 = tf.sparse_tensor_dense_matmul(support, x1)
+            if self._max_diffusion_step == 0:
+                pass
+            else:
+                for support in self._supports:
+                    x1 = tf.sparse_tensor_dense_matmul(support, x0)
                     x = self._concat(x, x1)
+
+                    for k in range(2, self._max_diffusion_step + 1):
+                        x2 = 2 * tf.sparse_tensor_dense_matmul(support, x1) - x0
+                        x = self._concat(x, x2)
+                        x1, x0 = x2, x1
 
             num_matrices = len(self._supports) * self._max_diffusion_step + 1  # Adds for x itself.
             x = tf.reshape(x, shape=[num_matrices, self._num_nodes, input_size, batch_size])
