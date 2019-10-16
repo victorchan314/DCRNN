@@ -36,7 +36,10 @@ class DCRNNSupervisor(object):
         self._logger.info(kwargs)
 
         # Data preparation
-        self._data = utils.load_dataset(**self._data_kwargs)
+        self.single_horizon = bool(self._model_kwargs.get('single_horizon', False))
+        self.horizon = int(self._model_kwargs.get('horizon', 1))
+        self._data = utils.load_dataset(single_horizon=self.single_horizon, horizon=self.horizon,
+                                        **self._data_kwargs)
         for k, v in self._data.items():
             if hasattr(v, 'shape'):
                 self._logger.info((k, v.shape))
@@ -107,6 +110,8 @@ class DCRNNSupervisor(object):
             rnn_units = kwargs['model'].get('rnn_units')
             structure = '-'.join(
                 ['%d' % rnn_units for _ in range(num_rnn_layers)])
+            single_horizon = bool(kwargs['model'].get('single_horizon'))
+            h = 'sh' if single_horizon else 'h'
             horizon = kwargs['model'].get('horizon')
             filter_type = kwargs['model'].get('filter_type')
             filter_type_abbr = 'L'
@@ -114,8 +119,8 @@ class DCRNNSupervisor(object):
                 filter_type_abbr = 'R'
             elif filter_type == 'dual_random_walk':
                 filter_type_abbr = 'DR'
-            run_id = 'dcrnn_%s_%d_h_%d_%s_lr_%g_bs_%d_%s/' % (
-                filter_type_abbr, max_diffusion_step, horizon,
+            run_id = 'dcrnn_%s_%d_%s_%d_%s_lr_%g_bs_%d_%s/' % (
+                filter_type_abbr, max_diffusion_step, h, horizon,
                 structure, learning_rate, batch_size,
                 time.strftime('%Y%m%d%H%M%S'))
             base_dir = kwargs.get('base_dir')
@@ -269,6 +274,7 @@ class DCRNNSupervisor(object):
         predictions = []
         y_truths = []
         for horizon_i in range(self._data['y_test'].shape[1]):
+            horizon = self.horizon if self.single_horizon else horizon_i + 1
             y_truth = scaler.inverse_transform(self._data['y_test'][:, horizon_i, :, 1])
             y_truths.append(y_truth)
 
@@ -280,11 +286,11 @@ class DCRNNSupervisor(object):
             rmse = metrics.masked_rmse_np(y_pred, y_truth, null_val=0)
             self._logger.info(
                 "Horizon {:02d}, MAE: {:.2f}, MAPE: {:.4f}, RMSE: {:.2f}".format(
-                    horizon_i + 1, mae, mape, rmse
+                    horizon, mae, mape, rmse
                 )
             )
             utils.add_simple_summary(self._writer,
-                                     ['%s_%d' % (item, horizon_i + 1) for item in
+                                     ['%s_%d' % (item, horizon) for item in
                                       ['metric/rmse', 'metric/mape', 'metric/mae']],
                                      [rmse, mape, mae],
                                      global_step=global_step)

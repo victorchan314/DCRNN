@@ -23,7 +23,8 @@ class DCRNNModel(object):
         max_diffusion_step = int(model_kwargs.get('max_diffusion_step', 2))
         cl_decay_steps = int(model_kwargs.get('cl_decay_steps', 1000))
         filter_type = model_kwargs.get('filter_type', 'laplacian')
-        horizon = int(model_kwargs.get('horizon', 1))
+        single_horizon = bool(model_kwargs.get('single_horizon', False))
+        h = int(model_kwargs.get('horizon', 1))
         max_grad_norm = float(model_kwargs.get('max_grad_norm', 5.0))
         num_nodes = int(model_kwargs.get('num_nodes', 1))
         num_rnn_layers = int(model_kwargs.get('num_rnn_layers', 1))
@@ -32,6 +33,8 @@ class DCRNNModel(object):
         use_curriculum_learning = bool(model_kwargs.get('use_curriculum_learning', False))
         input_dim = int(model_kwargs.get('input_dim', 1))
         output_dim = int(model_kwargs.get('output_dim', 1))
+
+        horizon = 1 if single_horizon else h
 
         # Input (batch_size, timesteps, num_sensor, input_dim)
         self._inputs = tf.placeholder(tf.float32, shape=(batch_size, seq_len, num_nodes, input_dim), name='inputs')

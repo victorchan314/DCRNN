@@ -186,7 +186,7 @@ def get_total_trainable_parameter_size():
     return total_parameters
 
 
-def load_dataset(dataset_dir, batch_size, test_batch_size=None, **kwargs):
+def load_dataset(dataset_dir, batch_size, test_batch_size=None, single_horizon=False, horizon=None, **kwargs):
     data = {}
     for category in ['train', 'val', 'test']:
         cat_data = np.load(os.path.join(dataset_dir, category + '.npz'))
@@ -197,6 +197,8 @@ def load_dataset(dataset_dir, batch_size, test_batch_size=None, **kwargs):
     for category in ['train', 'val', 'test']:
         data['x_' + category][..., 1] = scaler.transform(data['x_' + category][..., 1])
         data['y_' + category][..., 1] = scaler.transform(data['y_' + category][..., 1])
+        if single_horizon:
+            data['y_' + category] = data['y_' + category][:, horizon-1, ...][:, np.newaxis, ...]
     data['train_loader'] = DataLoader(data['x_train'], data['y_train'], batch_size, shuffle=True)
     data['val_loader'] = DataLoader(data['x_val'], data['y_val'], test_batch_size, shuffle=False)
     data['test_loader'] = DataLoader(data['x_test'], data['y_test'], test_batch_size, shuffle=False)
