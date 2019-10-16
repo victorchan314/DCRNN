@@ -18,11 +18,32 @@ DETECTOR_DATA_FREQUENCY = dt.timedelta(minutes=5)
 
 def load_predictions_from_path(path):
     if os.path.isdir(path):
-        pass
+        horizons = []
+        predictions_array = []
+        groundtruth_array = []
+
+        for d in os.listdir(path):
+            parameters = d.split("_")
+            for p in parameters:
+                if p.startswith("sh"):
+                    horizon = int(p[2:])
+                    horizons.append(horizon)
+
+                    predictions_path = os.path.join(path, d, "predictions.npz")
+                    predictions_file = np.load(predictions_path)
+                    predictions_array.append(predictions_file["predictions"])
+                    groundtruth_array.append(predictions_file["groundtruth"])
+
+        predictions = np.vstack([p for _, p in sorted(zip(horizons, predictions_array), key=lambda x: x[0])])
+        groundtruth = np.vstack([g for _, g in sorted(zip(horizons, groundtruth_array), key=lambda x: x[0])])
+
+        return predictions, groundtruth, sorted(horizons)
     elif os.path.isfile(path):
         predictions_file = np.load(args.predictions)
+        predictions = predictions_file["predictions"]
+        groundtruth = predictions_file["groundtruth"]
 
-        return predictions_file["predictions"], predictions_file["groundtruth"]
+        return predictions, groundtruth, range(1, predictions.shape[0] + 1)
     else:
         raise ValueError("Path is invalid")
 
@@ -59,16 +80,16 @@ def plot_predictions(y, y_hat, x, timestamps_array, horizon, sensors, horizons=N
 
         cmap = plt.get_cmap('jet')
 
-        horizons = horizons or range(horizon)
+        horizons = horizons or range(1, horizon + 1)
 
         if by_horizon:
             for i, h in enumerate(horizons):
-                stretches = data_utils.get_stretches(timestamps_array[:, h], DETECTOR_DATA_FREQUENCY)
+                stretches = data_utils.get_stretches(timestamps_array[:, h - 1], DETECTOR_DATA_FREQUENCY)
                 color = cmap(i / len(horizons))
 
                 for start, end in stretches:
-                    x_stretch = timestamps_array[start:end, h]
-                    y_hat_stretch = y_hat[h, start:end, sensor]
+                    x_stretch = timestamps_array[start:end, h - 1]
+                    y_hat_stretch = y_hat[h - 1, start:end, sensor]
                     x_stretch_range = fit_dates_to_timestamps(x, x_stretch, xticks)
 
                     if start == 0:
@@ -137,12 +158,15 @@ def main(args):
     verbose = args.verbose or 0
 
     # Shape of predictions and groundtruth is (seq_len or horizon, time, sensor)
-    predictions_array, groundtruth_array = load_predictions_from_path(args.predictions)
+    predictions_array, groundtruth_array, horizons = load_predictions_from_path(args.predictions)
     timestamps_array = np.load(args.timestamps)["timestamps_y"]
 
-    horizon = args.horizon or predictions_array.shape[0]
+    horizon = args.horizon or timestamps_array.shape[1]
     sensors = ast.literal_eval(args.sensors) if args.sensors else range(predictions_array.shape[2])
-    horizons = ast.literal_eval(args.horizons) if args.horizons else None
+    horizons = ast.literal_eval(args.horizons) if args.horizons else horizons
+
+    timestamps_array = data_utils.pad_array(timestamps_array, horizon)
+    groundtruth_array = data_utils.pad_array(groundtruth_array, horizon)
 
     timestamps, groundtruth = extract_flat_data(timestamps_array, groundtruth_array)
 
