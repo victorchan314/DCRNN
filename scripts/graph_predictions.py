@@ -1,4 +1,5 @@
 import argparse
+import ast
 import os
 import sys
 
@@ -14,6 +15,16 @@ from lib import data_utils
 DETECTOR_DATA_FREQUENCY = dt.timedelta(minutes=5)
 
 
+
+def load_predictions_from_path(path):
+    if os.path.isdir(path):
+        pass
+    elif os.path.isfile(path):
+        predictions_file = np.load(args.predictions)
+
+        return predictions_file["predictions"], predictions_file["groundtruth"]
+    else:
+        raise ValueError("Path is invalid")
 
 def extract_flat_data(timestamps_array, groundtruth_array):
     stretches = data_utils.get_stretches(timestamps_array[:, 0], DETECTOR_DATA_FREQUENCY)
@@ -124,27 +135,29 @@ def plot_predictions_all_sensors(y, y_hat, horizon, timestamps=None, horizons=No
 
 def main(args):
     verbose = args.verbose or 0
-    predictions_file = np.load(args.predictions)
 
     # Shape of predictions and groundtruth is (seq_len or horizon, time, sensor)
-    predictions_array = predictions_file["predictions"]
-    groundtruth_array = predictions_file["groundtruth"]
+    predictions_array, groundtruth_array = load_predictions_from_path(args.predictions)
     timestamps_array = np.load(args.timestamps)["timestamps_y"]
+
     horizon = args.horizon or predictions_array.shape[0]
+    sensors = ast.literal_eval(args.sensors) if args.sensors else range(predictions_array.shape[2])
+    horizons = ast.literal_eval(args.horizons) if args.horizons else None
 
     timestamps, groundtruth = extract_flat_data(timestamps_array, groundtruth_array)
 
-    #plot_predictions(groundtruth, predictions, horizon, sensors=[0, 4, 8, 12], timestamps=timestamps, horizons=[0, 4, 8, 11], save_dir=args.graph_save_dir, title="DCRNN Predictions", figsize=(20, 8), xlabel="Time", ylabel="Flow", verbose=verbose)
-    #plot_predictions(groundtruth, predictions_array, timestamps, timestamps_array, horizon, sensors=[1], horizons=[0, 2, 4, 6, 8, 10], save_dir=args.graph_save_dir,
-    #                 title="DCRNN Predictions", figsize=(20, 8), xlabel="Time", ylabel="Flow", verbose=verbose)
-    plot_predictions(groundtruth, predictions_array, timestamps, timestamps_array, horizon, sensors=[1], horizons=[0, 2, 4, 6, 8, 10], by_horizon=False, save_dir=args.graph_save_dir,
+    plot_predictions(groundtruth, predictions_array, timestamps, timestamps_array, horizon,
+                     sensors=sensors, horizons=horizons, by_horizon=args.by_horizon, save_dir=args.graph_save_dir,
                      title="DCRNN Predictions", figsize=(20, 8), xlabel="Time", ylabel="Flow", verbose=verbose)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("predictions", help="npz file of predictions")
+    parser.add_argument("predictions", help="If file, npz file of predictions. If directory, then parent directory of single horizon data")
     parser.add_argument("timestamps", help="npz file of timestamps")
     parser.add_argument("--horizon", help="number of time steps in horizon. If not provided, it will be inferred from the shape of predictions")
+    parser.add_argument("-s", "--sensors", help="sensors to plot graphs for")
+    parser.add_argument("--horizons", help="horizons to plot on each graph")
+    parser.add_argument("--by_horizon", default=True, help="plot predictions based on horizon (default) or by timestamp")
     parser.add_argument("--graph_save_dir", help="directory to save graphs to")
     parser.add_argument("-v", "--verbose", action="count", help="verbosity of script")
     args = parser.parse_args()
