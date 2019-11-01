@@ -97,7 +97,7 @@ def plot_predictions(y, y_hat, x, timestamps_array, horizon, sensors, horizons=N
                     else:
                         label = None
 
-                    plt.plot(x_stretch_range, y_hat_stretch, label=label, c=color)
+                    plt.plot(x_stretch_range, y_hat_stretch, label=label, c=color, alpha=0.3)
 
             plt.legend(loc="upper left", bbox_to_anchor=(1, 1), borderaxespad=0.)
             plt.show()
@@ -115,7 +115,7 @@ def plot_predictions(y, y_hat, x, timestamps_array, horizon, sensors, horizons=N
                     else:
                         label = None
 
-                    plt.plot(x_stretch_range, y_hat_stretch, label=label, c=color)
+                    plt.plot(x_stretch_range, y_hat_stretch, label=label, c=color, alpha=0.3)
 
             plt.legend(loc="upper left", bbox_to_anchor=(1, 1), borderaxespad=0.)
             plt.show()
@@ -161,9 +161,10 @@ def main(args):
     predictions_array, groundtruth_array, horizons = load_predictions_from_path(args.predictions)
     timestamps_array = np.load(args.timestamps)["timestamps_y"]
 
-    horizon = args.horizon or timestamps_array.shape[1]
+    horizon = int(args.horizon or timestamps_array.shape[1])
     sensors = ast.literal_eval(args.sensors) if args.sensors else range(predictions_array.shape[2])
     horizons = ast.literal_eval(args.horizons) if args.horizons else horizons
+    by_horizon = not args.by_time
 
     timestamps_array = data_utils.pad_array(timestamps_array, horizon)
     groundtruth_array = data_utils.pad_array(groundtruth_array, horizon)
@@ -171,7 +172,7 @@ def main(args):
     timestamps, groundtruth = extract_flat_data(timestamps_array, groundtruth_array)
 
     plot_predictions(groundtruth, predictions_array, timestamps, timestamps_array, horizon,
-                     sensors=sensors, horizons=horizons, by_horizon=args.by_horizon, save_dir=args.graph_save_dir,
+                     sensors=sensors, horizons=horizons, by_horizon=by_horizon, save_dir=args.graph_save_dir,
                      title="DCRNN Predictions", figsize=(20, 8), xlabel="Time", ylabel="Flow", verbose=verbose)
 
 if __name__ == "__main__":
@@ -181,7 +182,7 @@ if __name__ == "__main__":
     parser.add_argument("--horizon", help="number of time steps in horizon. If not provided, it will be inferred from the shape of predictions")
     parser.add_argument("-s", "--sensors", help="sensors to plot graphs for")
     parser.add_argument("--horizons", help="horizons to plot on each graph")
-    parser.add_argument("--by_horizon", default=True, help="plot predictions based on horizon (default) or by timestamp")
+    parser.add_argument("--by_time", action="store_true", help="plot predictions based on horizon (default) or by timestamp")
     parser.add_argument("--graph_save_dir", help="directory to save graphs to")
     parser.add_argument("-v", "--verbose", action="count", help="verbosity of script")
     args = parser.parse_args()

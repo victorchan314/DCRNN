@@ -275,10 +275,10 @@ class DCRNNSupervisor(object):
         y_truths = []
         for horizon_i in range(self._data['y_test'].shape[1]):
             horizon = self.horizon if self.single_horizon else horizon_i + 1
-            y_truth = scaler.inverse_transform(self._data['y_test'][:, horizon_i, :, 1])
+            y_truth = scaler.inverse_transform(self._data['y_test'][:, horizon_i, :, 1:])
             y_truths.append(y_truth)
 
-            y_pred = scaler.inverse_transform(y_preds[:y_truth.shape[0], horizon_i, :, 1])
+            y_pred = scaler.inverse_transform(y_preds[:y_truth.shape[0], horizon_i, :, 1:])
             predictions.append(y_pred)
 
             mae = metrics.masked_mae_np(y_pred, y_truth, null_val=0)
