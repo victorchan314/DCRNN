@@ -43,18 +43,20 @@ class DCGRUCell(RNNCell):
         self._max_diffusion_step = max_diffusion_step
         self._supports = []
         self._use_gc_for_ru = use_gc_for_ru
-        supports = []
-        if filter_type == "laplacian":
-            supports.append(utils.calculate_scaled_laplacian(adj_mx, lambda_max=None))
-        elif filter_type == "random_walk":
-            supports.append(utils.calculate_random_walk_matrix(adj_mx).T)
-        elif filter_type == "dual_random_walk":
-            supports.append(utils.calculate_random_walk_matrix(adj_mx).T)
-            supports.append(utils.calculate_random_walk_matrix(adj_mx.T).T)
-        else:
-            supports.append(utils.calculate_scaled_laplacian(adj_mx))
-        for support in supports:
-            self._supports.append(self._build_sparse_matrix(support))
+
+        if self._use_gc_for_ru:
+            supports = []
+            if filter_type == "laplacian":
+                supports.append(utils.calculate_scaled_laplacian(adj_mx, lambda_max=None))
+            elif filter_type == "random_walk":
+                supports.append(utils.calculate_random_walk_matrix(adj_mx).T)
+            elif filter_type == "dual_random_walk":
+                supports.append(utils.calculate_random_walk_matrix(adj_mx).T)
+                supports.append(utils.calculate_random_walk_matrix(adj_mx.T).T)
+            else:
+                supports.append(utils.calculate_scaled_laplacian(adj_mx))
+            for support in supports:
+                self._supports.append(self._build_sparse_matrix(support))
 
     @staticmethod
     def _build_sparse_matrix(L):

@@ -105,7 +105,7 @@ class DCRNNSupervisor(object):
         if log_dir is None:
             batch_size = kwargs['data'].get('batch_size')
             learning_rate = kwargs['train'].get('base_lr')
-            max_diffusion_step = kwargs['model'].get('max_diffusion_step')
+            max_diffusion_step = kwargs['model'].get('max_diffusion_step', 0)
             num_rnn_layers = kwargs['model'].get('num_rnn_layers')
             rnn_units = kwargs['model'].get('rnn_units')
             structure = '-'.join(

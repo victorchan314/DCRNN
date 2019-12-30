@@ -33,6 +33,7 @@ class DCRNNModel(object):
         use_curriculum_learning = bool(model_kwargs.get('use_curriculum_learning', False))
         input_dim = int(model_kwargs.get('input_dim', 1))
         output_dim = int(model_kwargs.get('output_dim', 1))
+        use_gc_for_ru = bool(model_kwargs.get("use_gc_for_ru", True))
 
         horizon = 1 if single_horizon else h
 
@@ -45,9 +46,9 @@ class DCRNNModel(object):
         GO_SYMBOL = tf.zeros(shape=(batch_size, num_nodes * output_dim))
 
         cell = DCGRUCell(rnn_units, adj_mx, max_diffusion_step=max_diffusion_step, num_nodes=num_nodes,
-                         filter_type=filter_type)
+                         filter_type=filter_type, use_gc_for_ru=use_gc_for_ru)
         cell_with_projection = DCGRUCell(rnn_units, adj_mx, max_diffusion_step=max_diffusion_step, num_nodes=num_nodes,
-                                         num_proj=output_dim, filter_type=filter_type)
+                                         num_proj=output_dim, filter_type=filter_type, use_gc_for_ru=use_gc_for_ru)
         encoding_cells = [cell] * num_rnn_layers
         decoding_cells = [cell] * (num_rnn_layers - 1) + [cell_with_projection]
         encoding_cells = tf.contrib.rnn.MultiRNNCell(encoding_cells, state_is_tuple=True)
