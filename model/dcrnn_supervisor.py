@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import datetime as dt
 import numpy as np
 import os
 import sys
@@ -31,7 +32,8 @@ class DCRNNSupervisor(object):
         # logging.
         self._log_dir = self._get_log_dir(kwargs)
         log_level = self._kwargs.get('log_level', 'INFO')
-        self._logger = utils.get_logger(self._log_dir, __name__, 'info.log', level=log_level)
+        log_name = "{}_{}_{}".format(__name__, self._log_dir, dt.datetime.today().strftime("%Y%m%d-%H%M%S"))
+        self._logger = utils.get_logger(self._log_dir, log_name, 'info.log', level=log_level)
         self._writer = tf.summary.FileWriter(self._log_dir)
         self._logger.info(kwargs)
 
