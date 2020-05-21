@@ -39,9 +39,14 @@ def load_predictions_from_path(path):
 
         return predictions, groundtruth, sorted(horizons)
     elif os.path.isfile(path):
-        predictions_file = np.load(args.predictions)
+        predictions_file = np.load(path)
         predictions = predictions_file["predictions"]
         groundtruth = predictions_file["groundtruth"]
+
+        if predictions.ndim > 3 and predictions.shape[-1] == 1:
+            predictions = predictions[..., 0]
+        if groundtruth.ndim > 3 and groundtruth.shape[-1] == 1:
+            groundtruth = groundtruth[..., 0]
 
         return predictions, groundtruth, range(1, predictions.shape[0] + 1)
     else:
@@ -162,7 +167,7 @@ def main(args):
     timestamps_array = np.load(args.timestamps)["timestamps_y"]
 
     horizon = int(args.horizon or timestamps_array.shape[1])
-    sensors = ast.literal_eval(args.sensors) if args.sensors else range(predictions_array.shape[2])
+    sensors = ast.literal_eval(args.sensors) if not args.sensors is None else list(range(predictions_array.shape[2]))
     horizons = ast.literal_eval(args.horizons) if args.horizons else horizons
     by_horizon = not args.by_time
 
